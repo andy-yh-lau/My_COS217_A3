@@ -6,6 +6,9 @@
 # ifndef SYMTABLE
 # define SYMTABLE
 
+/* This essentially means that *SymTable_T is a pointer type to SymTable */
+typedef struct SymTable *SymTable_T;
+
 /*--------------------------------------------------------------------*/
 /* Returns a new SymTable object that contains no bindings, or NULL if 
 insufficient memory is available */
