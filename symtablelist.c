@@ -29,6 +29,7 @@ insufficient memory is available */
 SymTable_T SymTable_new(void)
 {
     SymTable_T oSymTable = malloc(sizeof(struct SymTable));
+    
     if (oSymTable == NULL)
     {
         return NULL;
@@ -42,14 +43,18 @@ SymTable_T SymTable_new(void)
 
 void SymTable_free(SymTable_T oSymTable)
 {
+    struct Node *curr; 
+    struct Node *next; 
     assert(oSymTable != NULL);
-    struct Node *curr = oSymTable->first;
+
+    curr = oSymTable->first;
     while (curr != NULL)
     {
-        struct Node *next = curr->next; /* (*curr).next; */
+        next = curr->next; /* (*curr).next; */
         free(curr);
         curr = next;
     }
+    free(oSymTable);
 }
 
 /*--------------------------------------------------------------------*/
@@ -57,9 +62,11 @@ void SymTable_free(SymTable_T oSymTable)
 
 size_t SymTable_getLength(SymTable_T oSymTable)
 {
-    assert(oSymTable != NULL);
+    struct Node *curr;
     size_t count = 0;
-    struct Node *curr = oSymTable->first;
+    assert(oSymTable != NULL);
+
+    curr = oSymTable->first;
     while (curr != NULL)
     {
         count++;
@@ -80,11 +87,14 @@ int SymTable_put(SymTable_T oSymTable,
                  const char *pcKey, const void *pvValue)
 {
 
+    struct Node *curr;
+    struct Node *newNode;
+
     assert(oSymTable != NULL);
     assert(pcKey != NULL);
     assert(pvValue != NULL);
 
-    struct Node *curr = oSymTable->first;
+    curr = oSymTable->first;
     while (curr != NULL)
     {
         if (strcmp(curr->key, pcKey) == 0)
@@ -92,7 +102,7 @@ int SymTable_put(SymTable_T oSymTable,
         curr = curr->next;
     }
 
-    struct Node *newNode = malloc(sizeof(struct Node));
+    newNode = malloc(sizeof(struct Node));
     if (newNode == NULL)
         return 0;
 
@@ -112,16 +122,19 @@ void *SymTable_replace(SymTable_T oSymTable,
                        const char *pcKey, const void *pvValue)
 {
 
+    struct Node *curr;
+    void *oldValue;
+
     assert(oSymTable != NULL);
     assert(pcKey != NULL);
     assert(pvValue != NULL);
 
-    struct Node *curr = oSymTable->first;
+    curr = oSymTable->first;
     while (curr != NULL)
     {
         if (strcmp(curr->key, pcKey) == 0)
         {
-            void *oldValue = curr->value;
+            oldValue = curr->value;
             curr->value = pvValue;
             return oldValue;
         }
@@ -135,10 +148,12 @@ void *SymTable_replace(SymTable_T oSymTable,
 and 0 (FALSE) otherwise */
 int SymTable_contains(SymTable_T oSymTable, const char *pcKey)
 {
+    struct Node *curr;
+
     assert(oSymTable != NULL);
     assert(pcKey != NULL);
 
-    struct Node *curr = oSymTable->first;
+    curr = oSymTable->first;
     while (curr != NULL)
     {
         if (strcmp(curr->key, pcKey) == 0)
@@ -154,10 +169,11 @@ or NULL if no such binding exists */
 
 void *SymTable_get(SymTable_T oSymTable, const char *pcKey)
 {
+    struct Node *curr;
     assert(oSymTable != NULL);
     assert(pcKey != NULL);
 
-    struct Node *curr = oSymTable->first;
+    curr = oSymTable->first;
     while (curr != NULL)
     {
         if (strcmp(curr->key, pcKey) == 0)
@@ -174,17 +190,21 @@ must not change oSymTable and return NULL. */
 
 void *SymTable_remove(SymTable_T oSymTable, const char *pcKey)
 {
+    struct Node *curr;
+    void *bindingValue;
+    struct Node *nodeRemoved;
+    void *bindingValue;
     assert(oSymTable != NULL);
     assert(pcKey != NULL);
 
     /* Double check to make sure that I can call other functions I defined */
 
-    struct Node *curr = oSymTable->first;
+    curr = oSymTable->first;
 
     /* Deals with case if binding with key pcKey is the first node */
     if (strcmp(curr->key, pcKey) == 0)
     {
-        void *bindingValue = curr->value;
+        bindingValue = curr->value;
         oSymTable->first = curr->next;
         free(curr);
         return bindingValue;
@@ -195,8 +215,8 @@ void *SymTable_remove(SymTable_T oSymTable, const char *pcKey)
     {
         if (strcmp(curr->next->key, pcKey) == 0)
         {
-            struct Node *nodeRemoved = curr->next;
-            void *bindingValue = nodeRemoved->value;
+            nodeRemoved = curr->next;
+            bindingValue = nodeRemoved->value;
             curr->next = nodeRemoved->next;
             free(nodeRemoved);
             return bindingValue;
@@ -216,8 +236,12 @@ void SymTable_map(SymTable_T oSymTable,
                   void (*pfApply)(const char *pcKey, void *pvValue, void *pvExtra),
                   const void *pvExtra)
 {
+
+    struct Node *curr;
     assert(oSymTable != NULL);
-    struct Node *curr = oSymTable->first;
+    assert(pfApply != NULL);
+
+    curr = oSymTable->first;
     while (curr != NULL)
     {
         pfApply(curr->key, curr->value, (void *)pvExtra);
