@@ -145,7 +145,6 @@ int SymTable_put(SymTable_T oSymTable,
     
     assert(oSymTable != NULL);
     assert(pcKey != NULL);
-    assert(pvValue != NULL);
 
     /* Compute the current bucket index for pcKey */
     bucketIndex = SymTable_hash(pcKey, 
@@ -252,7 +251,6 @@ void *SymTable_replace(SymTable_T oSymTable,
 
     assert(oSymTable != NULL);
     assert(pcKey != NULL);
-    assert(pvValue != NULL);
 
     bucketIndex = SymTable_hash(pcKey, 
     BUCKET_COUNTS[oSymTable->bucketSizeIndex]);
