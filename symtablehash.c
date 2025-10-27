@@ -13,7 +13,6 @@ array. */
 #include "symtable.h"
 #include <assert.h>
 #include <string.h>
-#include <stdlib.h>
 
 /* List of prime number used for hash table sizes. Each number
 represents number of buckets for particular binding counts. When 

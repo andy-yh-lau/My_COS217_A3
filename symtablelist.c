@@ -10,7 +10,6 @@ list of bindings, where each binding contains a key-value pair. */
 
 #include "symtable.h"
 #include <assert.h>
-#include <stdlib.h>
 #include <string.h>
 
 /*--------------------------------------------------------------------*/
@@ -19,7 +18,7 @@ list of bindings, where each binding contains a key-value pair. */
 struct Binding
 {
     /* Pointer to the key string (defensive copy) */
-    const char *key;
+    char *key;
     /* Pointer to the associated value */
     const void *value;
     /* Pointer to the next binding in the linked list */

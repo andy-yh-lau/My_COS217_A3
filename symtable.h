@@ -6,6 +6,7 @@
 # ifndef SYMTABLE
 # define SYMTABLE
 
+#include <stdlib.h>
 /* Define SymTable_T as a pointer struct SymTable */
 typedef struct SymTable *SymTable_T;
 
