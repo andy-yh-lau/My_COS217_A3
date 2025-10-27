@@ -18,7 +18,7 @@ list of bindings, where each binding contains a key-value pair. */
 struct Binding
 {
     /* Pointer to the key string (defensive copy) */
-    char *key;
+    const char *key;
     /* Pointer to the associated value */
     void *value;
     /* Pointer to the next binding in the linked list */
@@ -66,7 +66,7 @@ void SymTable_free(SymTable_T oSymTable)
         next = curr->next; 
 
         /* Free the copied key string and the binding struct */
-        free(curr->key);
+        free((char *)curr->key);
         free(curr);
 
         /* Move to the next binding */
@@ -143,7 +143,7 @@ int SymTable_put(SymTable_T oSymTable,
     }
 
     /* Copy string into newly allocated memory */
-    strcpy(newBinding->key, pcKey);
+    strcpy((char *)newBinding->key, pcKey);
 
     /* Store value pointer */
     newBinding->value = pvValue; 
