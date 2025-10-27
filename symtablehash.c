@@ -340,7 +340,7 @@ void *SymTable_remove(SymTable_T oSymTable, const char *pcKey)
     /* Check if first binding of the bucket chain matches pcKey */
     if (strcmp(curr->key, pcKey) == 0)
     {
-        bindingValue = curr->value;
+        bindingValue = (void*)curr->value;
         oSymTable->buckets[bucketIndex] = curr->next;
         free((void*)curr->key);
         free(curr);
@@ -354,11 +354,11 @@ void *SymTable_remove(SymTable_T oSymTable, const char *pcKey)
         /* Handle condition for if binding with pcKey exists */
         if (strcmp(curr->next->key, pcKey) == 0)
         {
-            nodeRemoved = (void)*curr->next;
-            bindingValue = nodeRemoved->value;
+            nodeRemoved = curr->next;
+            bindingValue = (void*)nodeRemoved->value;
             curr->next = nodeRemoved->next;
-            free(nodeRemoved->key);
-            free(nodeRemoved);
+            free((void*)nodeRemoved->key);
+            free((void*)nodeRemoved);
             oSymTable->bindingsCount--; 
             return bindingValue;
         }
