@@ -3,254 +3,317 @@
 /* Author: Andy Lau                                                   */
 /*--------------------------------------------------------------------*/
 
+/* Linked-list implementation of symbol table that maps string keys to 
+void* values. Each key is stored with defensive copy to ensure
+ownership by the symbol table. Symbol table maintains a singly linked 
+list of bindings, where each binding contains a key-value pair. */
+
 #include "symtable.h"
 #include <assert.h>
-#include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 
 /*--------------------------------------------------------------------*/
-struct Node
+
+/* Each Binding represents a key-value pair in hash table bucket */
+struct Binding
 {
+    /* Pointer to the key string (defensive copy) */
     const char *key;
+    /* Pointer to the associated value */
     const void *value;
-    struct Node *next;
+    /* Pointer to the next binding in the linked list */
+    struct Binding *next;
 };
 
 struct SymTable
 {
-    struct Node *first;
+    /* Head of the linked list of bindings */
+    struct Binding *first;
 };
 
-
 /*--------------------------------------------------------------------*/
-/* Returns a new SymTable object that contains no bindings, or NULL if
-insufficient memory is available */
 
 SymTable_T SymTable_new(void)
 {
+    /* Allocate memory for a new symbol table */
     SymTable_T oSymTable = malloc(sizeof(struct SymTable));
     
+    /* Handle the case if allocation of memory fails */
     if (oSymTable == NULL)
     {
         return NULL;
     }
+    
+    /* Initialize the empty list */
     oSymTable->first = NULL;
     return oSymTable;
 }
 
 /*--------------------------------------------------------------------*/
-/* Frees all memory occupied by oSymTable */
 
 void SymTable_free(SymTable_T oSymTable)
 {
-    struct Node *curr; 
-    struct Node *next; 
+    struct Binding *curr; 
+    struct Binding *next; 
     assert(oSymTable != NULL);
 
     curr = oSymTable->first;
+
+    /* Traverse through all the bindings in list */
     while (curr != NULL)
     {
-        next = curr->next; /* (*curr).next; */
+        /* Save pointer to next before freeing curr */
+        next = curr->next; 
+
+        /* Free the copied key string and the binding struct */
+        free(curr->key);
         free(curr);
+
+        /* Move to the next binding */
         curr = next;
     }
+
+    /* Free the symbol table itself */
     free(oSymTable);
 }
 
 /*--------------------------------------------------------------------*/
-/* Returns the numbert of bindings in oSymTable */
 
 size_t SymTable_getLength(SymTable_T oSymTable)
 {
-    struct Node *curr;
+    struct Binding *curr;
     size_t count = 0;
     assert(oSymTable != NULL);
 
+    /* Initialize curr to first binding in list */
     curr = oSymTable->first;
+
+    /* Traverse through all the bindings in list */
     while (curr != NULL)
     {
-        count++;
+        /* Increment counter for each binding */
+        count++; 
+
+        /* Move to the next binding */
         curr = curr->next;
     }
     return count;
 }
 
 /*--------------------------------------------------------------------*/
-/* If oSymTable does not contain a binding with key pcKey, then
-SymTable_put must add a new binding to oSymTable consisting of key
-pcKey and value pvValue and return 1 (TRUE). Otherwise, the function
-must leave oSymTable unchanged and return 0 (FALSE). If insufficient
-memory is unavailable, then the function must leave oSymTable unchanged
-and return 0 (FALSE) */
 
 int SymTable_put(SymTable_T oSymTable,
                  const char *pcKey, const void *pvValue)
 {
 
-    struct Node *curr;
-    struct Node *newNode;
+    struct Binding *curr;
+    struct Binding *newBinding;
 
     assert(oSymTable != NULL);
     assert(pcKey != NULL);
     assert(pvValue != NULL);
 
+    /* Traverse through all bindings to check if key already exists */
     curr = oSymTable->first;
     while (curr != NULL)
     {
+        /* Handle condition if binding with pcKey already exists */
         if (strcmp(curr->key, pcKey) == 0)
-            return 0; /* Compares the two strings*/
+            return 0; 
+        
+        /* Otherwise, move on to the next binding */
         curr = curr->next;
     }
 
-    newNode = malloc(sizeof(struct Node));
-    if (newNode == NULL)
+    /* Allocate memory for new binding */
+    newBinding = malloc(sizeof(struct Binding));
+    
+    /* Handle condition of insufficient memory for new binding */
+    if (newBinding == NULL)
         return 0;
 
-    newNode->key = pcKey;
-    newNode->value = pvValue;
-    newNode->next = oSymTable->first;
-    oSymTable->first = newNode;
+    /* Copy the key string defensively */
+    newBinding->key = malloc(strlen(pcKey) + 1);
+
+    /* Handle condition of insufficient memory for defensive copy 
+    of key string */
+    if (newBinding->key == NULL) {
+        free(newBinding);
+        return 0; 
+    }
+
+    /* Copy string into newly allocated memory */
+    strcpy(newBinding->key, pcKey);
+
+    /* Store value pointer */
+    newBinding->value = pvValue; 
+    /* Insert new binding to head of list */
+    newBinding->next = oSymTable->first; 
+    /* Update pointer to head of list */
+    oSymTable->first = newBinding;
     return 1;
 }
 
 /*--------------------------------------------------------------------*/
-/* If oSymTable contains a binding with pcKey, then replaces binding's
-value with pvValue and return the old value. Otherwise, leave the
-oSymTable unchanged and return NULL */
 
 void *SymTable_replace(SymTable_T oSymTable,
                        const char *pcKey, const void *pvValue)
 {
 
-    struct Node *curr;
+    struct Binding *curr;
     void *oldValue;
 
     assert(oSymTable != NULL);
     assert(pcKey != NULL);
     assert(pvValue != NULL);
 
+    /* Initialize curr to first binding in list */
     curr = oSymTable->first;
+
+    /* Traverse through all the bindings in list */
     while (curr != NULL)
     {
+        /* Handle condition for if binding with pcKey exists */
         if (strcmp(curr->key, pcKey) == 0)
         {
-            oldValue = curr->value;
-            curr->value = pvValue;
-            return oldValue;
+            /* Save the old value */
+            oldValue = curr->value; 
+            /* Replace with new value */
+            curr->value = pvValue; 
+            /* Return the previous old value */
+            return oldValue; 
         }
+
+        /* Otherwise, move on to the next binding */
         curr = curr->next;
     }
+
+    /* Handle condition for if no binding with pcKey exists */
     return NULL;
 }
 
 /*--------------------------------------------------------------------*/
-/* Returns 1 (TRUE) if oSymTable contains a binding whose key is pcKey,
-and 0 (FALSE) otherwise */
+
 int SymTable_contains(SymTable_T oSymTable, const char *pcKey)
 {
-    struct Node *curr;
-
+    struct Binding *curr;
     assert(oSymTable != NULL);
     assert(pcKey != NULL);
 
+    /* Initialize curr to first binding in list */
     curr = oSymTable->first;
+
+    /* Traverse through all the bindings in list */
     while (curr != NULL)
     {
+        /* Handle condition for if binding with pcKey exists */
         if (strcmp(curr->key, pcKey) == 0)
             return 1;
+
+        /* Otherwise, move on to the next binding */
         curr = curr->next;
     }
+    
+    /* Handle condition for if no binding with pcKey exists */
     return 0;
 }
 
 /*--------------------------------------------------------------------*/
-/* Return the value of the binding within oSymTable whose key is pcKey,
-or NULL if no such binding exists */
 
 void *SymTable_get(SymTable_T oSymTable, const char *pcKey)
 {
-    struct Node *curr;
+    struct Binding *curr;
     assert(oSymTable != NULL);
     assert(pcKey != NULL);
 
+    /* Initialize curr to first binding in list */
     curr = oSymTable->first;
+
+    /* Traverse through all the bindings in list */
     while (curr != NULL)
     {
+        /* Handle condition for if binding with pcKey exists */
         if (strcmp(curr->key, pcKey) == 0)
             return curr->value;
+        
+        /* Otherwise, move on to the next binding */
         curr = curr->next;
     }
+
+    /* Handle condition for if no binding with pcKey exists */
     return NULL;
 }
 
 /*--------------------------------------------------------------------*/
-/* If oSymTable contains a binding with key pcKey, removes that binding
-from oSymTable and returns the binding's value. Otherwise, the function
-must not change oSymTable and return NULL. */
 
 void *SymTable_remove(SymTable_T oSymTable, const char *pcKey)
 {
-    struct Node *curr;
+    struct Binding *curr;
     void *bindingValue;
-    struct Node *nodeRemoved;
-    void *bindingValue;
+    struct Binding *bindingRemoved;
+
     assert(oSymTable != NULL);
     assert(pcKey != NULL);
 
-    /* Double check to make sure that I can call other functions I defined */
-
+    /* Initialize curr to first binding in list */
     curr = oSymTable->first;
 
-    /* Deals with case if binding with key pcKey is the first node */
+    /* Check if first binding has key pcKey */
     if (strcmp(curr->key, pcKey) == 0)
     {
-        bindingValue = curr->value;
-        oSymTable->first = curr->next;
-        free(curr);
-        return bindingValue;
+        bindingValue = curr->value; /* Store value before removal */
+        oSymTable->first = curr->next; /* Move head to next binding */
+        free(curr->key); /* Free copied key string */
+        free(curr); /* Free the Binding struct */
+        return bindingValue; 
     }
 
-    /* Deals wiith the case of all other nodes in the list */
+    /* Check remaining bindings in the list */
     while (curr->next != NULL)
     {
+        /* Handle condition for if binding with pcKey exists */
         if (strcmp(curr->next->key, pcKey) == 0)
         {
-            nodeRemoved = curr->next;
-            bindingValue = nodeRemoved->value;
-            curr->next = nodeRemoved->next;
-            free(nodeRemoved);
+            bindingRemoved = curr->next;
+            
+            /* Store value before removal */
+            bindingValue = bindingRemoved->value; 
+            
+            /* Link to next binding after the removed one */
+            curr->next = bindingRemoved->next;
+
+            free(bindingRemoved->key); /* Free copied key string */
+            free(bindingRemoved); /* Free the Binding struct */
             return bindingValue;
         }
+
+        /* Otherwise, move on to the next binding */
         curr = curr->next;
     }
+     /* Handle condition for if no binding with pcKey exists */
     return NULL;
 }
 
 /*--------------------------------------------------------------------*/
-/* Must apply function *pfApply to each binding in oSymTable, passing
-pvExtra as an extra parameter. That is, the function, must call
-(*pfApply) (pcKey, pvValue, pvExtra) for each pcKey/pvValue binding in
-oSymTable */
 
 void SymTable_map(SymTable_T oSymTable,
-                  void (*pfApply)(const char *pcKey, void *pvValue, void *pvExtra),
-                  const void *pvExtra)
+                  void (*pfApply)(const char *pcKey, void *pvValue, 
+                  void *pvExtra), const void *pvExtra)
 {
-
-    struct Node *curr;
+    struct Binding *curr;
     assert(oSymTable != NULL);
     assert(pfApply != NULL);
 
+    /* Initialize curr to first binding in list */
     curr = oSymTable->first;
+
+    /* Traverse through all the bindings in list */
     while (curr != NULL)
     {
+        /* Apply the function on each key/value */
         pfApply(curr->key, curr->value, (void *)pvExtra);
-        /* Make sure to cast pvExtra to void * since it's const void * in the method */
+        /* Move to the next binding */
         curr = curr->next;
     }
-    /* Note tht pdApply is a function pointer here, as it's the
-    finction we want to call for each binding*/
-
-    /* pvExtra here is one extra pointer of const void*
-    that we'll pass into pfApply each time we call it */
 }

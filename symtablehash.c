@@ -3,34 +3,50 @@
 /* Author: Andy Lau                                                   */
 /*--------------------------------------------------------------------*/
 
-/* MAKE SURE TO ALWAYS DECLARE ALL VARIABLES AT THE BEG OF THE LOOPS */
+/* Hash-table-based implementation of symbol table that maps string
+keys to void* values. Each key is stored with defensive copy to ensure
+ensure ownership by symbol table. Collisions handled via separate
+chaining with linked lists within each bucket. When symbol table 
+becomes full, resizes and rehahses all bindings into larger bucket 
+array. */
 
 #include "symtable.h"
 #include <assert.h>
-#include <stddef.h>
+#include <string.h>
+#include <stdlib.h>
 
-/* Sequence of integers for the bucket counts */
-static const size_t BUCKET_COUNTS[] = {509, 1021, 2039, 4093, 8191, 16381,
-                                       32749, 65521};
+/* List of prime number used for hash table sizes. Each number
+represents number of buckets for particular binding counts. When 
+table grows, moves to the next prime count */
+static const size_t BUCKET_COUNTS[] = {509, 1021, 2039, 4093, 8191, 
+                                        16381, 32749, 65521};
 
-/* Array of linked lists for the hash table */
+/* Each Binding represents a key-value pair in hash table bucket */
 struct Binding
 {
+    /* Pointer to the key string (defensive copy) */
     const char *key;
-    void *value;
+    /* Pointer to the associated value */
+    const void *value;
+    /* Pointer to next binding in bucket chain */
     struct Binding *next;
 };
 
+/* SymTable structure represents overall hash table */
 struct SymTable
 {
-    struct Binding **buckets; /* pointer to array of linked-list heads*/
-    size_t bucketCount;
-    size_t sizeIndex;
+    /* Pointer to array of bucket heads */
+    struct Binding **buckets; 
+    /* Stores total nubmer of bindings in SymTable */
+    size_t bindingsCount;
+    /* Stores indx into BUCKET_COUNTS array */
+    size_t bucketSizeIndex;
 };
 
 /*--------------------------------------------------------------------*/
-/* Return a hash code for pcKey that is between 0 and uBucketCount-1,
-   inclusive. */
+
+/* Return a has code for pcKey that is between 0 and uBucketCount-1, 
+inclusive. */
 
 static size_t SymTable_hash(const char *pcKey, size_t uBucketCount)
 {
@@ -47,28 +63,24 @@ static size_t SymTable_hash(const char *pcKey, size_t uBucketCount)
 }
 
 /*--------------------------------------------------------------------*/
-/* Returns a new SymTable object that contains no bindings, or NULL if
-insufficient memory is available */
 
 SymTable_T SymTable_new(void)
 {
     SymTable_T oSymTable;
     
-    oSymTable= malloc(sizeof(struct SymTable));
+    oSymTable = malloc(sizeof(struct SymTable));
     if (oSymTable == NULL)
     {
         return NULL;
     }
 
-    /* Initial assignments for sizeIndex and the bucketCount */
-    oSymTable->sizeIndex = 0;
-    oSymTable->bucketCount = BUCKET_COUNTS[oSymTable->sizeIndex];
+    oSymTable->bucketSizeIndex = 0;
+    oSymTable->bindingsCount = 0;
 
-    /* Allocates array of buckets, which are initially set as NULL since we're using calloc*/
-    oSymTable->buckets = calloc(oSymTable->bucketCount, sizeof(struct Binding *));
-    /* Here, you eseneailly want to allocate enough memory for the array of pointers
-    since u don't know how many nodes will go into each bucket. We will deal with that in malloc when
-    inserting keys. */
+    /* Allocates array of buckets that are initially set as NULL */
+    oSymTable->buckets = calloc(BUCKET_COUNTS
+    [oSymTable->bucketSizeIndex], sizeof(struct Binding *));
+  
     if (oSymTable->buckets == NULL)
     {
         free(oSymTable);
@@ -79,148 +91,158 @@ SymTable_T SymTable_new(void)
 }
 
 /*--------------------------------------------------------------------*/
-/* Frees all memory occupied by oSymTable */
 
 void SymTable_free(SymTable_T oSymTable)
 {
     size_t i;
     struct Binding *curr;
     struct Binding *next;
+    
     assert(oSymTable != NULL);
     
-    for (i = 0; i < oSymTable->bucketCount; i++)
+    /* Free every binding in every binding */
+    for (i = 0; i < BUCKET_COUNTS[oSymTable->bucketSizeIndex]; i++)
     {
         curr = oSymTable->buckets[i];
         while (curr != NULL)
         {
-            next = curr->next; /* (*curr).next; */
-            free(curr);
+            next = curr->next; 
+
+            /* Free the key copy */
+            free(((void*)curr->key));
+            /* Free the current binding node */ 
+            free(curr);   
+
             curr = next;
         }
     }
 
-    free(oSymTable->buckets); /* frees array of bucket pointers*/
-    free(oSymTable);          /* this frees the symtable itself*/
+    /* Free the bucket array */
+    free(oSymTable->buckets); /* Free the bucket array */
+    /* Free the symbol table structure */
+    free(oSymTable);       
 }
 
 /*--------------------------------------------------------------------*/
-/* Returns the number of bindings in oSymTable */
 
 size_t SymTable_getLength(SymTable_T oSymTable)
 {
-    size_t i;
-    struct Binding *curr;
-    size_t bindingsCount = 0;
-    
     assert(oSymTable != NULL);
-
-    for (i = 0; i < oSymTable->bucketCount; i++)
-    {
-        curr = oSymTable->buckets[i];
-        while (curr != NULL)
-        {
-            bindingsCount++;
-            curr = curr->next;
-        }
-    }
-    return bindingsCount;
+    return oSymTable->bindingsCount; 
 }
 
 /*--------------------------------------------------------------------*/
-/* If oSymTable does not contain a binding with key pcKey, then
-SymTable_put must add a new binding to oSymTable consisting of key
-pcKey and value pvValue and return 1 (TRUE). Otherwise, the function
-must leave oSymTable unchanged and return 0 (FALSE). If insufficient
-memory is unavailable, then the function must leave oSymTable unchanged
-and return 0 (FALSE) */
 
 int SymTable_put(SymTable_T oSymTable,
                  const char *pcKey, const void *pvValue)
 {
-
-    /* Def change up the variable names later on */
-    struct Binding *curr;
-    struct Binding *newBinding;
-    size_t bucketIndex;
-    size_t bucketIndexNew;
-    size_t newIndex;
-    size_t newBucketCount;
-
+    
+    struct Binding *curr, *newBinding, *next;
     struct Binding **newBuckets;
-    size_t newBucketIndex;
-    struct Binding *next;
-
+    size_t bucketIndex, newBucketIndex, newBucketCount, 
+    newBucketSizeIndex;
     size_t i;
-
+    
     assert(oSymTable != NULL);
     assert(pcKey != NULL);
     assert(pvValue != NULL);
 
-    bucketIndex = SymTable_hash(pcKey, oSymTable->bucketCount);
+    /* Compute the current bucket index for pcKey */
+    bucketIndex = SymTable_hash(pcKey, 
+    BUCKET_COUNTS[oSymTable->bucketSizeIndex]);
 
-    /* Case for when oSymTble contains a binding with key pcKey */
+    /* Traverse through all bindings to check if key already exists */
     curr = oSymTable->buckets[bucketIndex];
     while (curr != NULL)
     {
+         /* Handle condition if binding with pcKey already exists */
         if (strcmp(curr->key, pcKey) == 0)
-            return 0; /* Compares the two strings*/
+            return 0; 
+        
+        /* Otherwise, move on to the next binding */
         curr = curr->next;
     }
 
-    /* Addresses the case for when insufficient memory is unavailable */
+    /* Allocate memory for new binding */
     newBinding = malloc(sizeof(struct Binding));
+
+    /* Handle condition of insufficient memory for new binding */
     if (newBinding == NULL)
         return 0;
 
-    if (oSymTable->sizeIndex < 7 && SymTable_getLength(oSymTable) + 1 >= BUCKET_COUNTS[(oSymTable->sizeIndex) + 1])
-    {
-        newIndex = oSymTable->sizeIndex + 1;
-        newBucketCount = BUCKET_COUNTS[newIndex];
+    /* Copy the key string defensively */
+    char *keyCopy = malloc(strlen(pcKey) + 1);
+    
+    /* Handle condition of insufficient memory for defensive copy 
+    of key string */
+    if (keyCopy == NULL) {
+        free(newBinding);
+        return 0; 
+    }
 
-        /* Case of inefficient memory, as the allocation failed */
+    /* Copy string into newly allocated memory */
+    strcpy(keyCopy, pcKey);
+
+    /* Resize the symbol table if the load factor (number of bindings 
+    divided by the number of buckets) exceeds 1 but not at max size */
+    if (oSymTable->bucketSizeIndex < 7 && oSymTable->bindingsCount + 1 
+    > BUCKET_COUNTS[(oSymTable->bucketSizeIndex)])
+    {
+        newBucketSizeIndex = oSymTable->bucketSizeIndex + 1;
+        newBucketCount = BUCKET_COUNTS[newBucketSizeIndex];
+
+        /* Allocate memory for larger array of buckets  */
         newBuckets = calloc(newBucketCount, sizeof(struct Binding *));
         if (newBuckets == NULL)
         {
             free(newBinding);
+            free(keyCopy);
             return 0;
         }
 
-        /* Case for rehashing the existing bindings
-         */
-        for (i = 0; i < oSymTable->bucketCount; i++)
+        /* Rehash all existing bindings into the symbol table */
+        for (i = 0; i < BUCKET_COUNTS[oSymTable->bucketSizeIndex]; i++)
         {
             curr = oSymTable->buckets[i];
             while (curr != NULL)
             {
-                next = curr->next; /* This saves the next node*/
-                newBucketIndex = SymTable_hash(curr->key, newBucketCount);
-                curr->next = newBuckets[newBucketIndex]; /* Next of curr node is tghe statrt of the bucket at the new hash table */
-                newBuckets[newBucketIndex] = curr;       /* start of the bucket at in the new hash table is now the current node */
-                curr = next;                             /* Sets the current node to the next node for iteration purposes */
+                next = curr->next; 
+                newBucketIndex = SymTable_hash(curr->key, 
+                newBucketCount);
+                
+                /* Insert binding at the front of new bucket */
+                curr->next = newBuckets[newBucketIndex]; 
+                newBuckets[newBucketIndex] = curr;  
+                
+                /* Sets current node to next node in bucket */
+                curr = next;                            
             }
         }
 
+        /* Replace old buckets in oSymTable with new larger, array */
         free(oSymTable->buckets);
         oSymTable->buckets = newBuckets;
-        oSymTable->bucketCount = newBucketCount;
-        oSymTable->sizeIndex = newIndex;
+        oSymTable->bucketSizeIndex = newBucketSizeIndex;
     }
 
-    /* Computes the bucket index for the new key*/
-    bucketIndex = SymTable_hash(pcKey, oSymTable->bucketCount);
-    newBinding->key = pcKey;
+    /* Compute bucket index again in case symbol table was resized */
+    bucketIndex = SymTable_hash(pcKey, 
+    BUCKET_COUNTS[oSymTable->bucketSizeIndex]);
+
+    /* Insert new binding at the front of the bucket chain */
+    newBinding->key = keyCopy;
     newBinding->value = pvValue;
     newBinding->next = oSymTable->buckets[bucketIndex];
     oSymTable->buckets[bucketIndex] = newBinding;
+
+    /* Increases number of bindings by 1 */
+    oSymTable->bindingsCount++;
 
     /* Successful insertion*/
     return 1;
 }
 
 /*--------------------------------------------------------------------*/
-/* If oSymTable contains a binding with pcKey, then replaces binding's
-value with pvValue and return the old value. Otherwise, leave the
-oSymTable unchanged and return NULL */
 
 void *SymTable_replace(SymTable_T oSymTable,
                        const char *pcKey, const void *pvValue)
@@ -232,7 +254,8 @@ void *SymTable_replace(SymTable_T oSymTable,
     assert(pcKey != NULL);
     assert(pvValue != NULL);
 
-    bucketIndex = SymTable_hash(pcKey, oSymTable->bucketCount);
+    bucketIndex = SymTable_hash(pcKey, 
+    BUCKET_COUNTS[oSymTable->bucketSizeIndex]);
 
     curr = oSymTable->buckets[bucketIndex];
 
@@ -250,15 +273,15 @@ void *SymTable_replace(SymTable_T oSymTable,
 }
 
 /*--------------------------------------------------------------------*/
-/* Returns 1 (TRUE) if oSymTable contains a binding whose key is pcKey,
-and 0 (FALSE) otherwise */
+
 int SymTable_contains(SymTable_T oSymTable, const char *pcKey)
 {
 
     size_t bucketIndex;
     struct Binding *curr;
 
-    bucketIndex = SymTable_hash(pcKey, oSymTable->bucketCount);
+    bucketIndex = SymTable_hash(pcKey, 
+    BUCKET_COUNTS[oSymTable->bucketSizeIndex]);
     assert(oSymTable != NULL);
     assert(pcKey != NULL);
 
@@ -267,15 +290,13 @@ int SymTable_contains(SymTable_T oSymTable, const char *pcKey)
     while (curr != NULL)
     {
         if (strcmp(curr->key, pcKey) == 0)
-            1;
+            return 1;
         curr = curr->next;
     }
     return 0;
 }
 
 /*--------------------------------------------------------------------*/
-/* Return the value of the binding within oSymTable whose key is pcKey,
-or NULL if no such binding exists */
 
 void *SymTable_get(SymTable_T oSymTable, const char *pcKey)
 {
@@ -283,7 +304,8 @@ void *SymTable_get(SymTable_T oSymTable, const char *pcKey)
     size_t bucketIndex;
     struct Binding *curr;
 
-    bucketIndex = SymTable_hash(pcKey, oSymTable->bucketCount);
+    bucketIndex = SymTable_hash(pcKey, 
+    BUCKET_COUNTS[oSymTable->bucketSizeIndex]);
     assert(oSymTable != NULL);
     assert(pcKey != NULL);
 
@@ -299,59 +321,63 @@ void *SymTable_get(SymTable_T oSymTable, const char *pcKey)
 }
 
 /*--------------------------------------------------------------------*/
-/* If oSymTable contains a binding with key pcKey, removes that binding
-from oSymTable and returns the binding's value. Otherwise, the function
-must not change oSymTable and return NULL. */
 
 void *SymTable_remove(SymTable_T oSymTable, const char *pcKey)
 {
 
     size_t bucketIndex;
-    struct Binding *curr;
+    struct Binding *curr, *nodeRemoved;
     void *bindingValue;
-    struct Binding *nodeRemoved;
 
     assert(oSymTable != NULL);
     assert(pcKey != NULL);
 
-    bucketIndex = SymTable_hash(pcKey, oSymTable->bucketCount);
+    bucketIndex = SymTable_hash(pcKey, 
+    BUCKET_COUNTS[oSymTable->bucketSizeIndex]);
     curr = oSymTable->buckets[bucketIndex];
 
+    /* Nothing to remove if the corresponding bucket chain is empty */
+    if (curr == NULL) return NULL;
+
+    /* Check if first binding of the bucket chain matches pcKey */
     if (strcmp(curr->key, pcKey) == 0)
     {
         bindingValue = curr->value;
         oSymTable->buckets[bucketIndex] = curr->next;
+        free(curr->key);
         free(curr);
+        oSymTable->bindingsCount--;
         return bindingValue;
     }
 
-    /* Deals with case if binding with key pcKey is the first binding of the bucket */
-
-    /* Deals wiith the case of all other bindings in the bucket */
+    /* Otherwise, search through rest of bindings in bucket chain */
     while (curr->next != NULL)
     {
+        /* Handle condition for if binding with pcKey exists */
         if (strcmp(curr->next->key, pcKey) == 0)
         {
             nodeRemoved = curr->next;
             bindingValue = nodeRemoved->value;
             curr->next = nodeRemoved->next;
+            free(nodeRemoved->key);
             free(nodeRemoved);
+            oSymTable->bindingsCount--; 
             return bindingValue;
         }
+
+        /* Otherwise, move on to the next binding */
         curr = curr->next;
     }
+
+    /* Handle condition for if no binding with pcKey exists */
     return NULL;
 }
 
 /*--------------------------------------------------------------------*/
-/* Must apply function *pfApply to each binding in oSymTable, passing
-pvExtra as an extra parameter. That is, the function, must call
-(*pfApply) (pcKey, pvValue, pvExtra) for each pcKey/pvValue binding in
-oSymTable */
 
 void SymTable_map(SymTable_T oSymTable,
-                  void (*pfApply)(const char *pcKey, void *pvValue, void *pvExtra),
-                  const void *pvExtra)
+                  void (*pfApply)(const char *pcKey, void *pvValue, 
+                  void *pvExtra), const void *pvExtra)
 {
 
     size_t i;
@@ -360,7 +386,8 @@ void SymTable_map(SymTable_T oSymTable,
     assert(oSymTable != NULL);
     assert(pfApply != NULL);
 
-    for (i = 0; i < oSymTable->bucketCount; i++)
+    /* Iterate over all buckets and bindings */
+    for (i = 0; i < BUCKET_COUNTS[oSymTable->bucketSizeIndex]; i++)
     {
         curr = oSymTable->buckets[i];
         while (curr != NULL)
