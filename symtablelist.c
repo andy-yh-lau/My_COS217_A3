@@ -177,11 +177,11 @@ void *SymTable_replace(SymTable_T oSymTable,
         if (strcmp(curr->key, pcKey) == 0)
         {
             /* Save the old value */
-            oldValue = curr->value; 
+            oldValue = (void*) curr->value; 
             /* Replace with new value */
             curr->value = pvValue; 
             /* Return the previous old value */
-            return (void*) oldValue; 
+            return oldValue; 
         }
 
         /* Otherwise, move on to the next binding */
