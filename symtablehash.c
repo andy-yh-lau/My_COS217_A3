@@ -141,6 +141,7 @@ int SymTable_put(SymTable_T oSymTable,
     size_t bucketIndex, newBucketIndex, newBucketCount, 
     newBucketSizeIndex;
     size_t i;
+    char *keyCopy;
     
     assert(oSymTable != NULL);
     assert(pcKey != NULL);
@@ -170,7 +171,7 @@ int SymTable_put(SymTable_T oSymTable,
         return 0;
 
     /* Copy the key string defensively */
-    char *keyCopy = malloc(strlen(pcKey) + 1);
+    keyCopy = malloc(strlen(pcKey) + 1);
     
     /* Handle condition of insufficient memory for defensive copy 
     of key string */
@@ -262,7 +263,7 @@ void *SymTable_replace(SymTable_T oSymTable,
     {
         if (strcmp(curr->key, pcKey) == 0)
         {
-            void *oldValue = curr->value;
+            void *oldValue = (void*)curr->value;
             curr->value = pvValue;
             return oldValue;
         }
@@ -313,7 +314,7 @@ void *SymTable_get(SymTable_T oSymTable, const char *pcKey)
     while (curr != NULL)
     {
         if (strcmp(curr->key, pcKey) == 0)
-            return curr->value;
+            return (void*)curr->value;
         curr = curr->next;
     }
     return NULL;
@@ -343,7 +344,7 @@ void *SymTable_remove(SymTable_T oSymTable, const char *pcKey)
     {
         bindingValue = curr->value;
         oSymTable->buckets[bucketIndex] = curr->next;
-        free(curr->key);
+        free((void*)curr->key);
         free(curr);
         oSymTable->bindingsCount--;
         return bindingValue;
@@ -355,7 +356,7 @@ void *SymTable_remove(SymTable_T oSymTable, const char *pcKey)
         /* Handle condition for if binding with pcKey exists */
         if (strcmp(curr->next->key, pcKey) == 0)
         {
-            nodeRemoved = curr->next;
+            nodeRemoved = (void)*curr->next;
             bindingValue = nodeRemoved->value;
             curr->next = nodeRemoved->next;
             free(nodeRemoved->key);
