@@ -141,7 +141,7 @@ int SymTable_put(SymTable_T oSymTable,
         free(newBinding);
         return 0; 
     }
-    
+
     /* Copy string into newly allocated memory */
     strcpy((char *)newBinding->key, pcKey);
 
@@ -181,7 +181,7 @@ void *SymTable_replace(SymTable_T oSymTable,
             /* Replace with new value */
             curr->value = pvValue; 
             /* Return the previous old value */
-            return oldValue; 
+            return (void*) oldValue; 
         }
 
         /* Otherwise, move on to the next binding */
@@ -234,7 +234,7 @@ void *SymTable_get(SymTable_T oSymTable, const char *pcKey)
     {
         /* Handle condition for if binding with pcKey exists */
         if (strcmp(curr->key, pcKey) == 0)
-            return curr->value;
+            return (void*) curr->value;
         
         /* Otherwise, move on to the next binding */
         curr = curr->next;
@@ -261,7 +261,7 @@ void *SymTable_remove(SymTable_T oSymTable, const char *pcKey)
     /* Check if first binding has key pcKey */
     if (strcmp(curr->key, pcKey) == 0)
     {
-        bindingValue = curr->value; /* Store value before removal */
+        bindingValue = (void*) curr->value; /* Store value before removal */
         oSymTable->first = curr->next; /* Move head to next binding */
         free((char *)curr->key); /* Free copied key string */
         free(curr); /* Free the Binding struct */
@@ -277,7 +277,7 @@ void *SymTable_remove(SymTable_T oSymTable, const char *pcKey)
             bindingRemoved = curr->next;
             
             /* Store value before removal */
-            bindingValue = bindingRemoved->value; 
+            bindingValue = (void*) bindingRemoved->value; 
             
             /* Link to next binding after the removed one */
             curr->next = bindingRemoved->next;
@@ -311,7 +311,7 @@ void SymTable_map(SymTable_T oSymTable,
     while (curr != NULL)
     {
         /* Apply the function on each key/value */
-        pfApply(curr->key, curr->value, (void *)pvExtra);
+        pfApply(curr->key, (void*) curr->value, (void *)pvExtra);
         /* Move to the next binding */
         curr = curr->next;
     }
