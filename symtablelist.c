@@ -313,7 +313,7 @@ void SymTable_map(SymTable_T oSymTable,
     while (curr != NULL)
     {
         /* Apply the function on each key/value */
-        (void) pfApply(curr->key, (void*) curr->value, (void *)pvExtra);
+        (void) pfApply(curr->key, (void*) curr->value, pvExtra);
         /* Move to the next binding */
         curr = curr->next;
     }
