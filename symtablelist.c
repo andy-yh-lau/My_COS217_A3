@@ -258,6 +258,8 @@ void *SymTable_remove(SymTable_T oSymTable, const char *pcKey)
     /* Initialize curr to first binding in list */
     curr = oSymTable->first;
 
+    if (curr == NULL) return NULL;
+
     /* Check if first binding has key pcKey */
     if (strcmp(curr->key, pcKey) == 0)
     {
