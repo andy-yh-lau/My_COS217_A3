@@ -391,7 +391,7 @@ void SymTable_map(SymTable_T oSymTable,
         curr = oSymTable->buckets[i];
         while (curr != NULL)
         {
-            pfApply(curr->key, curr->value, (void *)pvExtra);
+            (void)(*pfApply)(curr->key, (void*) curr->value, (void*)pvExtra);
             curr = curr->next;
         }
     }
