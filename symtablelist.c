@@ -20,7 +20,7 @@ struct Binding
     /* Pointer to the key string (defensive copy) */
     const char *key;
     /* Pointer to the associated value */
-    void *value;
+    const void *value;
     /* Pointer to the next binding in the linked list */
     struct Binding *next;
 };
@@ -66,8 +66,8 @@ void SymTable_free(SymTable_T oSymTable)
         next = curr->next; 
 
         /* Free the copied key string and the binding struct */
-        free((char *)curr->key);
-        free(curr);
+        free((char*)curr->key);
+        free((char*)curr);
 
         /* Move to the next binding */
         curr = next;
@@ -141,7 +141,7 @@ int SymTable_put(SymTable_T oSymTable,
         free(newBinding);
         return 0; 
     }
-
+    
     /* Copy string into newly allocated memory */
     strcpy((char *)newBinding->key, pcKey);
 
@@ -263,7 +263,7 @@ void *SymTable_remove(SymTable_T oSymTable, const char *pcKey)
     {
         bindingValue = curr->value; /* Store value before removal */
         oSymTable->first = curr->next; /* Move head to next binding */
-        free(curr->key); /* Free copied key string */
+        free((char *)curr->key); /* Free copied key string */
         free(curr); /* Free the Binding struct */
         return bindingValue; 
     }
@@ -282,7 +282,7 @@ void *SymTable_remove(SymTable_T oSymTable, const char *pcKey)
             /* Link to next binding after the removed one */
             curr->next = bindingRemoved->next;
 
-            free(bindingRemoved->key); /* Free copied key string */
+            free((char*)bindingRemoved->key); /* Free copied key string */
             free(bindingRemoved); /* Free the Binding struct */
             return bindingValue;
         }
