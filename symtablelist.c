@@ -20,7 +20,7 @@ struct Binding
     /* Pointer to the key string (defensive copy) */
     char *key;
     /* Pointer to the associated value */
-    const void *value;
+    void *value;
     /* Pointer to the next binding in the linked list */
     struct Binding *next;
 };
