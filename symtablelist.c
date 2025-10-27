@@ -303,7 +303,6 @@ void SymTable_map(SymTable_T oSymTable,
     struct Binding *curr;
     assert(oSymTable != NULL);
     assert(pfApply != NULL);
-    assert(pvExtra != NULL);
 
     /* Initialize curr to first binding in list */
     curr = oSymTable->first;
