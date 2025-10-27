@@ -25,6 +25,7 @@ struct Binding
     struct Binding *next;
 };
 
+/* SymTable structure represents overall hash table */
 struct SymTable
 {
     /* Head of the linked list of bindings */
@@ -303,6 +304,7 @@ void SymTable_map(SymTable_T oSymTable,
     struct Binding *curr;
     assert(oSymTable != NULL);
     assert(pfApply != NULL);
+    assert(pvExtra != NULL);
 
     /* Initialize curr to first binding in list */
     curr = oSymTable->first;
@@ -311,7 +313,7 @@ void SymTable_map(SymTable_T oSymTable,
     while (curr != NULL)
     {
         /* Apply the function on each key/value */
-        pfApply(curr->key, (void*) curr->value, (void *)pvExtra);
+        (void) pfApply(curr->key, (void*) curr->value, (void *)pvExtra);
         /* Move to the next binding */
         curr = curr->next;
     }
