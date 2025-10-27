@@ -165,7 +165,6 @@ void *SymTable_replace(SymTable_T oSymTable,
 
     assert(oSymTable != NULL);
     assert(pcKey != NULL);
-    assert(pvValue != NULL);
 
     /* Initialize curr to first binding in list */
     curr = oSymTable->first;
