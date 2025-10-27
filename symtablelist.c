@@ -112,7 +112,6 @@ int SymTable_put(SymTable_T oSymTable,
 
     assert(oSymTable != NULL);
     assert(pcKey != NULL);
-    assert(pvValue != NULL);
 
     /* Traverse through all bindings to check if key already exists */
     curr = oSymTable->first;
