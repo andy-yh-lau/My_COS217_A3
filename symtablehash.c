@@ -182,7 +182,47 @@ int SymTable_put(SymTable_T oSymTable,
     /* Copy string into newly allocated memory */
     strcpy(keyCopy, pcKey);
 
-    
+     /* Resize the symbol table if the load factor (number of bindings 
+    divided by the number of buckets) exceeds 1 but not at max size */
+    if (oSymTable->bucketSizeIndex < 7 && oSymTable->bindingsCount + 1 
+    > BUCKET_COUNTS[(oSymTable->bucketSizeIndex)])
+    {
+        newBucketSizeIndex = oSymTable->bucketSizeIndex + 1;
+        newBucketCount = BUCKET_COUNTS[newBucketSizeIndex];
+
+        /* Allocate memory for larger array of buckets  */
+        newBuckets = calloc(newBucketCount, sizeof(struct Binding *));
+        if (newBuckets == NULL)
+        {
+            free(newBinding);
+            free(keyCopy);
+            return 0;
+        }
+
+        /* Rehash all existing bindings into the symbol table */
+        for (i = 0; i < BUCKET_COUNTS[oSymTable->bucketSizeIndex]; i++)
+        {
+            curr = oSymTable->buckets[i];
+            while (curr != NULL)
+            {
+                next = curr->next; 
+                newBucketIndex = SymTable_hash(curr->key, 
+                newBucketCount);
+                
+                /* Insert binding at the front of new bucket */
+                curr->next = newBuckets[newBucketIndex]; 
+                newBuckets[newBucketIndex] = curr;  
+                
+                /* Sets current node to next node in bucket */
+                curr = next;                            
+            }
+        }
+
+        /* Replace old buckets in oSymTable with new larger, array */
+        free(oSymTable->buckets);
+        oSymTable->buckets = newBuckets;
+        oSymTable->bucketSizeIndex = newBucketSizeIndex;
+    }
 
     /* Compute bucket index again in case symbol table was resized */
     bucketIndex = SymTable_hash(pcKey, 
