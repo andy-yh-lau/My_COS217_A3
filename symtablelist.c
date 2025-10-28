@@ -14,14 +14,14 @@ list of bindings, where each binding contains a key-value pair. */
 
 /*--------------------------------------------------------------------*/
 
-/* Each Binding represents a key-value pair in hash table bucket */
+/* Each Binding represents a key-value pair in hash table */
 struct Binding
 {
-    /* Pointer to the key string (defensive copy) */
+    /* Pointer to key string (defensive copy) */
     const char *key;
-    /* Pointer to the associated value */
+    /* Pointer to associated value */
     const void *value;
-    /* Pointer to the next binding in the linked list */
+    /* Pointer to next binding in the linked list */
     struct Binding *next;
 };
 
@@ -38,10 +38,10 @@ struct SymTable
 
 SymTable_T SymTable_new(void)
 {
-    /* Allocate memory for a new symbol table */
+    /* Allocate memory for new symbol table */
     SymTable_T oSymTable = malloc(sizeof(struct SymTable));
 
-    /* Handle the case if allocation of memory fails */
+    /* Handle case if allocation of memory to symTable pointer fails */
     if (oSymTable == NULL)
     {
         return NULL;
@@ -59,8 +59,10 @@ void SymTable_free(SymTable_T oSymTable)
 {
     struct Binding *curr; 
     struct Binding *next; 
+
     assert(oSymTable != NULL);
 
+    /* Initialize curr to first binding in list */
     curr = oSymTable->first;
 
     /* Traverse through all the bindings in list */
@@ -105,7 +107,7 @@ int SymTable_put(SymTable_T oSymTable,
     curr = oSymTable->first;
     while (curr != NULL)
     {
-        /* Handle condition if binding with pcKey already exists */
+        /* Handle condition where binding with pcKey already exists */
         if (strcmp(curr->key, pcKey) == 0)
             return 0; 
         
@@ -135,11 +137,12 @@ int SymTable_put(SymTable_T oSymTable,
 
     /* Store value pointer */
     newBinding->value = pvValue; 
+    
     /* Insert new binding to head of list */
     newBinding->next = oSymTable->first; 
-    /* Update pointer to head of list */
     oSymTable->first = newBinding;
 
+    /* Increment number of bindings */
     oSymTable->bindingsCount++;
 
     return 1;
@@ -163,7 +166,7 @@ void *SymTable_replace(SymTable_T oSymTable,
     /* Traverse through all the bindings in list */
     while (curr != NULL)
     {
-        /* Handle condition for if binding with pcKey exists */
+        /* Handle condition where binding with pcKey exists */
         if (strcmp(curr->key, pcKey) == 0)
         {
             /* Save the old value */
@@ -178,7 +181,7 @@ void *SymTable_replace(SymTable_T oSymTable,
         curr = curr->next;
     }
 
-    /* Handle condition for if no binding with pcKey exists */
+    /* Handle condition where no binding with pcKey exists */
     return NULL;
 }
 
@@ -187,6 +190,7 @@ void *SymTable_replace(SymTable_T oSymTable,
 int SymTable_contains(SymTable_T oSymTable, const char *pcKey)
 {
     struct Binding *curr;
+
     assert(oSymTable != NULL);
     assert(pcKey != NULL);
 
@@ -196,7 +200,7 @@ int SymTable_contains(SymTable_T oSymTable, const char *pcKey)
     /* Traverse through all the bindings in list */
     while (curr != NULL)
     {
-        /* Handle condition for if binding with pcKey exists */
+        /* Handle condition where binding with pcKey exists */
         if (strcmp(curr->key, pcKey) == 0)
             return 1;
 
@@ -204,7 +208,7 @@ int SymTable_contains(SymTable_T oSymTable, const char *pcKey)
         curr = curr->next;
     }
     
-    /* Handle condition for if no binding with pcKey exists */
+    /* Handle condition where no binding with pcKey exists */
     return 0;
 }
 
@@ -213,6 +217,7 @@ int SymTable_contains(SymTable_T oSymTable, const char *pcKey)
 void *SymTable_get(SymTable_T oSymTable, const char *pcKey)
 {
     struct Binding *curr;
+
     assert(oSymTable != NULL);
     assert(pcKey != NULL);
 
@@ -222,7 +227,7 @@ void *SymTable_get(SymTable_T oSymTable, const char *pcKey)
     /* Traverse through all the bindings in list */
     while (curr != NULL)
     {
-        /* Handle condition for if binding with pcKey exists */
+        /* Handle condition where binding with pcKey exists */
         if (strcmp(curr->key, pcKey) == 0)
             return (void*) curr->value;
         
@@ -230,7 +235,7 @@ void *SymTable_get(SymTable_T oSymTable, const char *pcKey)
         curr = curr->next;
     }
 
-    /* Handle condition for if no binding with pcKey exists */
+    /* Handle condition where no binding with pcKey exists */
     return NULL;
 }
 
@@ -253,8 +258,12 @@ void *SymTable_remove(SymTable_T oSymTable, const char *pcKey)
     /* Check if first binding has key pcKey */
     if (strcmp(curr->key, pcKey) == 0)
     {
-        bindingValue = (void*) curr->value; /* Store value before removal */
-        oSymTable->first = curr->next; /* Move head to next binding */
+        /* Store value before removal */
+        bindingValue = (void*) curr->value; 
+
+        /* Move head to next binding */
+        oSymTable->first = curr->next; 
+
         free((char *)curr->key); /* Free copied key string */
         free(curr); /* Free the Binding struct */
         oSymTable->bindingsCount--; /* Updates number of bindings */
@@ -264,7 +273,7 @@ void *SymTable_remove(SymTable_T oSymTable, const char *pcKey)
     /* Check remaining bindings in the list */
     while (curr->next != NULL)
     {
-        /* Handle condition for if binding with pcKey exists */
+        /* Handle condition where binding with pcKey exists */
         if (strcmp(curr->next->key, pcKey) == 0)
         {
             bindingRemoved = curr->next;
@@ -284,7 +293,8 @@ void *SymTable_remove(SymTable_T oSymTable, const char *pcKey)
         /* Otherwise, move on to the next binding */
         curr = curr->next;
     }
-     /* Handle condition for if no binding with pcKey exists */
+    
+     /* Handle condition where no binding with pcKey exists */
     return NULL;
 }
 
@@ -295,6 +305,7 @@ void SymTable_map(SymTable_T oSymTable,
                   void *pvExtra), const void *pvExtra)
 {
     struct Binding *curr;
+
     assert(oSymTable != NULL);
     assert(pfApply != NULL);
 
@@ -306,6 +317,7 @@ void SymTable_map(SymTable_T oSymTable,
     {
         /* Apply the function on each key/value */
         (void)(*pfApply)(curr->key, (void*) curr->value, (void*)pvExtra);
+
         /* Move to the next binding */
         curr = curr->next;
     }
