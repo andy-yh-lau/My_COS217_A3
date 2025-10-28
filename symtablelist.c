@@ -30,6 +30,8 @@ struct SymTable
 {
     /* Head of the linked list of bindings */
     struct Binding *first;
+    /* Stores total nubmer of bindings in SymTable */
+    size_t bindingsCount;
 };
 
 /*--------------------------------------------------------------------*/
@@ -38,7 +40,9 @@ SymTable_T SymTable_new(void)
 {
     /* Allocate memory for a new symbol table */
     SymTable_T oSymTable = malloc(sizeof(struct SymTable));
-    
+
+    oSymTable->bindingsCount = 0;
+
     /* Handle the case if allocation of memory fails */
     if (oSymTable == NULL)
     {
@@ -82,23 +86,8 @@ void SymTable_free(SymTable_T oSymTable)
 
 size_t SymTable_getLength(SymTable_T oSymTable)
 {
-    struct Binding *curr;
-    size_t count = 0;
     assert(oSymTable != NULL);
-
-    /* Initialize curr to first binding in list */
-    curr = oSymTable->first;
-
-    /* Traverse through all the bindings in list */
-    while (curr != NULL)
-    {
-        /* Increment counter for each binding */
-        count++; 
-
-        /* Move to the next binding */
-        curr = curr->next;
-    }
-    return count;
+    return oSymTable->bindingsCount;
 }
 
 /*--------------------------------------------------------------------*/
@@ -151,6 +140,9 @@ int SymTable_put(SymTable_T oSymTable,
     newBinding->next = oSymTable->first; 
     /* Update pointer to head of list */
     oSymTable->first = newBinding;
+
+    oSymTable->bindingsCount++;
+
     return 1;
 }
 
@@ -266,6 +258,7 @@ void *SymTable_remove(SymTable_T oSymTable, const char *pcKey)
         oSymTable->first = curr->next; /* Move head to next binding */
         free((char *)curr->key); /* Free copied key string */
         free(curr); /* Free the Binding struct */
+        oSymTable->bindingsCount--; /* Updates number of bindings */
         return bindingValue; 
     }
 
@@ -285,6 +278,7 @@ void *SymTable_remove(SymTable_T oSymTable, const char *pcKey)
 
             free((char*)bindingRemoved->key); /* Free copied key string */
             free(bindingRemoved); /* Free the Binding struct */
+            oSymTable->bindingsCount--; /* Updates number of bindings */
             return bindingValue;
         }
 

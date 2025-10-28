@@ -38,7 +38,7 @@ struct SymTable
     struct Binding **buckets; 
     /* Stores total nubmer of bindings in SymTable */
     size_t bindingsCount;
-    /* Stores indx into BUCKET_COUNTS array */
+    /* Stores index into BUCKET_COUNTS array */
     size_t bucketSizeIndex;
 };
 

@@ -7,7 +7,13 @@
 # define SYMTABLE
 
 #include <stdlib.h>
-/* Define SymTable_T as a pointer struct SymTable */
+
+/* 
+SymTable_T is a pointer to a symbol table (struct SymTable) that maps 
+unique string keys to values of type void*. Each key is stored as a 
+defensive copy owned by the symbol table. The symbol table supports 
+insertion, lookup, replacement, removal, and traversal of its bindings.
+*/
 typedef struct SymTable *SymTable_T;
 
 /*--------------------------------------------------------------------*/

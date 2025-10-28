@@ -5,8 +5,6 @@ What is your name?
 
 Andy Yick Ho Lau
 
-
-
 ------------------------------------------------------------------------
 What authorized sources of information did you use to complete the
 assignment? COPY THE LIST of authorized sources of information given
@@ -14,7 +12,11 @@ in the "Policies" web page (also available on armlab in the file
 ~cos217/AuthorizedSourcesList ) to this section of the readme file,
 and edit it as appropriate.
 
-
+COS 217 lecture materials.
+COS 217 precept materials.
+COS 217 website.
+The man pages on the armlab cluster.
+COS 217 staff and/or current students on Ed.
 
 ------------------------------------------------------------------------
 What unauthorized sources of information did you use to complete the
@@ -28,7 +30,7 @@ interaction, may additionally require the interaction being reported
 to the Committee on Discipline. Write "None" if you used no
 unauthorized sources of information.
 
-
+None
 
 ------------------------------------------------------------------------
 In fulfillment of the requirement from section 2.4.3 of the Academic
@@ -54,7 +56,9 @@ I did not use AI to complete this assignment.
 ------------------------------------------------------------------------
 What is your assessment of the assignment? Was it helpful? Was it fun?
 
-
+I felt that this assignment was pretty useful, as I had the opportunity 
+to build the linked-list and hash-table implemnetations of the symbol
+table starting from the basics, which I found to be pretty fun.
 
 ------------------------------------------------------------------------
 (optional) What information can you provide about your submission that
