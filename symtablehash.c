@@ -67,7 +67,7 @@ static size_t SymTable_hash(const char *pcKey, size_t uBucketCount)
 
 /*--------------------------------------------------------------------*/
 
-/* Expand the hash table to the next bucket size if adding one more
+/* Expand oSymTable to the next bucket size if adding one more
 binding would not make the load factor exceed 1, provided the table
 is not already at its maximum size and memory for a new bucket array
 is available*/
