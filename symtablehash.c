@@ -7,7 +7,7 @@
 keys to void* values. Each key is stored with defensive copy to ensure
 ensure ownership by symbol table. Collisions handled via separate
 chaining with linked lists within each bucket. When symbol table 
-becomes full, resizes and rehahses all bindings into larger bucket 
+becomes full, resizes and rehashes all bindings into larger bucket 
 array. */
 
 #include "symtable.h"
@@ -19,6 +19,10 @@ represents number of buckets for particular binding counts. When
 table grows, moves to the next prime count */
 static const size_t BUCKET_COUNTS[] = {509, 1021, 2039, 4093, 8191, 
                                         16381, 32749, 65521};
+
+/* Number of hash table sizes */
+static const size_t BUCKET_COUNTS_LEN = 
+sizeof(BUCKET_COUNTS) / sizeof(BUCKET_COUNTS[0]);
 
 /* Each Binding represents a key-value pair in hash table bucket */
 struct Binding
@@ -36,7 +40,7 @@ struct SymTable
 {
     /* Pointer to array of bucket heads */
     struct Binding **buckets; 
-    /* Stores total nubmer of bindings in SymTable */
+    /* Stores total number of bindings in SymTable */
     size_t bindingsCount;
     /* Stores index into BUCKET_COUNTS array */
     size_t bucketSizeIndex;
@@ -44,7 +48,7 @@ struct SymTable
 
 /*--------------------------------------------------------------------*/
 
-/* Return a has code for pcKey that is between 0 and uBucketCount-1, 
+/* Return a hash code for pcKey that is between 0 and uBucketCount-1, 
 inclusive. */
 
 static size_t SymTable_hash(const char *pcKey, size_t uBucketCount)
@@ -99,7 +103,7 @@ void SymTable_free(SymTable_T oSymTable)
     
     assert(oSymTable != NULL);
     
-    /* Free every binding in every binding */
+    /* Free every binding in every bucket */
     for (i = 0; i < BUCKET_COUNTS[oSymTable->bucketSizeIndex]; i++)
     {
         curr = oSymTable->buckets[i];
@@ -184,7 +188,7 @@ int SymTable_put(SymTable_T oSymTable,
 
      /* Resize the symbol table if the load factor (number of bindings 
     divided by the number of buckets) exceeds 1 but not at max size */
-    if (oSymTable->bucketSizeIndex < 7 && oSymTable->bindingsCount + 1 
+    if (oSymTable->bucketSizeIndex < BUCKET_COUNTS_LEN - 1 && oSymTable->bindingsCount + 1 
     > BUCKET_COUNTS[(oSymTable->bucketSizeIndex)])
     {
         newBucketSizeIndex = oSymTable->bucketSizeIndex + 1;
@@ -278,10 +282,11 @@ int SymTable_contains(SymTable_T oSymTable, const char *pcKey)
     size_t bucketIndex;
     struct Binding *curr;
 
-    bucketIndex = SymTable_hash(pcKey, 
-    BUCKET_COUNTS[oSymTable->bucketSizeIndex]);
     assert(oSymTable != NULL);
     assert(pcKey != NULL);
+
+    bucketIndex = SymTable_hash(pcKey, 
+    BUCKET_COUNTS[oSymTable->bucketSizeIndex]);
 
     curr = oSymTable->buckets[bucketIndex];
 
@@ -302,10 +307,11 @@ void *SymTable_get(SymTable_T oSymTable, const char *pcKey)
     size_t bucketIndex;
     struct Binding *curr;
 
-    bucketIndex = SymTable_hash(pcKey, 
-    BUCKET_COUNTS[oSymTable->bucketSizeIndex]);
     assert(oSymTable != NULL);
     assert(pcKey != NULL);
+
+    bucketIndex = SymTable_hash(pcKey, 
+    BUCKET_COUNTS[oSymTable->bucketSizeIndex]);
 
     curr = oSymTable->buckets[bucketIndex];
 
