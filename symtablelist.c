@@ -41,8 +41,6 @@ SymTable_T SymTable_new(void)
     /* Allocate memory for a new symbol table */
     SymTable_T oSymTable = malloc(sizeof(struct SymTable));
 
-    oSymTable->bindingsCount = 0;
-
     /* Handle the case if allocation of memory fails */
     if (oSymTable == NULL)
     {
@@ -51,6 +49,7 @@ SymTable_T SymTable_new(void)
     
     /* Initialize the empty list */
     oSymTable->first = NULL;
+    oSymTable->bindingsCount = 0;
     return oSymTable;
 }
 
