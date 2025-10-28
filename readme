@@ -74,6 +74,7 @@ disagreements with them? Copy the splint warnings here, and express your
 disagreement after each warning. If there are no warnings, then write
 "None."
 
+None.
 
 
 ------------------------------------------------------------------------
@@ -82,13 +83,41 @@ disagreements with them? Copy the critTer warnings here, and express
 your disagreement after each warning. If there are no warnings, then
 write "None."
 
+symtablelist.c: line 96: medium priority:
+Do you want to validate 'pvValue' through an assert?
 
+In my code, I did not validate pvValue through an assert since there 
+wasn't any need to do so. Also, it's possible for pvValue to be NULL, 
+as it's possible for a binding to not have an associated value. 
+Furthemore, when I added assert(pvVALUE != NULL) to my code, the 
+program aborted during execution, but when I ran the program after
+the assert statement, I passed all the test cases. 
+
+symtablelist.c: line 152: medium priority:
+Do you want to validate 'pvValue' through an assert?
+
+In my code, I did not validate pvValue through an assert since there 
+wasn't any need to do so. Also, it's possible for pvValue to be NULL, 
+as it's possible for a binding to not have an associated value. 
+Furthemore, when I added assert(pvVALUE != NULL) to my code, the 
+program aborted during execution, but when I ran the program after
+the assert statement, I passed all the test cases. 
+
+symtablelist.c: line 296: medium priority:
+Do you want to validate 'pvExtra' through an assert?
+
+Note that function pointers have to handle both cases of needing an
+extra argument and needing no extra argument. This means it's possible
+for pvExtra to be NULL since it's essentially used as a placeholder
+whenever it's not needed.
 
 ------------------------------------------------------------------------
 What warnings does splint generate on symtablehash.c, and what are your
 disagreements with them? Copy the splint warnings here, and express your
 disagreement after each warning. If there are no warnings, then write
 "None."
+
+None.
 
 
 
@@ -98,6 +127,36 @@ disagreements with them? Copy the critTer warnings here, and express
 your disagreement after each warning. If there are no warnings, then
 write "None."
 
+Note that my disagreements for each warning for symtablehash.c
+are the same as my disagreements for symtablelist.c.
+
+symtablehash.c: line 137: medium priority:
+Do you want to validate 'pvValue' through an assert?
+
+In my code, I did not validate pvValue through an assert since there 
+wasn't any need to do so. Also, it's possible for pvValue to be NULL, 
+as it's possible for a binding to not have an associated value. 
+Furthemore, when I added assert(pvVALUE != NULL) to my code, the 
+program aborted during execution, but when I ran the program after
+the assert statement, I passed all the test cases. 
+
+symtablehash.c: line 248: medium priority:
+Do you want to validate 'pvValue' through an assert?
+
+In my code, I did not validate pvValue through an assert since there 
+wasn't any need to do so. Also, it's possible for pvValue to be NULL, 
+as it's possible for a binding to not have an associated value. 
+Furthemore, when I added assert(pvVALUE != NULL) to my code, the 
+program aborted during execution, but when I ran the program after
+the assert statement, I passed all the test cases. 
+
+symtablehash.c: line 379: medium priority:
+Do you want to validate 'pvExtra' through an assert?
+
+Note that function pointers have to handle both cases of needing an
+extra argument and needing no extra argument. This means it's possible
+for pvExtra to be NULL since it's essentially used as a placeholder
+whenever it's not needed.
 
 
 ------------------------------------------------------------------------
