@@ -68,9 +68,9 @@ static size_t SymTable_hash(const char *pcKey, size_t uBucketCount)
 /*--------------------------------------------------------------------*/
 
 /* Expand oSymTable to the next bucket size if adding one more
-binding would not make the load factor exceed 1, provided the table
-is not already at its maximum size and memory for a new bucket array
-is available*/
+binding would make the load factor exceed 1, provided it is not 
+already at its maximum size and memory for a new bucket array is 
+available */
 
 static void SymTable_tryExpand(SymTable_T oSymTable) {
 
@@ -80,14 +80,10 @@ static void SymTable_tryExpand(SymTable_T oSymTable) {
     size_t newBucketSizeIndex, hashSlot;
     size_t i;
 
-    /* Handle case where hash table is at maximum configured size */
+    /* Handle case where symbol table is already at its maximum size */
     if (oSymTable->bucketSizeIndex >= BUCKET_COUNTS_LEN - 1) return;
 
     curBucketCount = BUCKET_COUNTS[oSymTable->bucketSizeIndex];
-
-    /* Handle case where adding one more binding does not warrant 
-    an expansion */
-    if (oSymTable->bindingsCount + 1 <= curBucketCount) return;
 
     /* Move up one step in prime number bucket sizes sequence */
     newBucketSizeIndex = oSymTable->bucketSizeIndex + 1;
@@ -213,7 +209,7 @@ int SymTable_put(SymTable_T oSymTable,
 {
 
     struct Binding *curr, *newBinding;
-    size_t bucketIndex;
+    size_t bucketIndex, curBucketCount;
     char *keyCopy;
 
     assert(oSymTable != NULL);
@@ -235,9 +231,13 @@ int SymTable_put(SymTable_T oSymTable,
         curr = curr->next;
     }
 
-    /* Expand the hash table and rehash all bindings if load factor 
-    exceeds 1 and there is sufficient memory */
-    SymTable_tryExpand(oSymTable);
+    curBucketCount = BUCKET_COUNTS[oSymTable->bucketSizeIndex];
+
+    /* Attempt to expand hash table if adding one more binding warrants 
+    an expansion */
+    if (oSymTable->bindingsCount + 1 > curBucketCount) {
+        SymTable_tryExpand(oSymTable);
+    }
 
     /* Compute bucket index again in case symbol table was resized */
     bucketIndex = SymTable_hash(pcKey,
