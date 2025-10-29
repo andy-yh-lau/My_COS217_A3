@@ -130,7 +130,7 @@ write "None."
 Note that my disagreements for each warning for symtablehash.c
 are the same as my disagreements for symtablelist.c.
 
-symtablehash.c: line 213: medium priority:
+symtablehash.c: line 209: medium priority:
 Do you want to validate 'pvValue' through an assert?
 
 In my code, I did not validate pvValue through an assert since there 
