@@ -10,11 +10,12 @@ list of bindings, where each binding contains a key-value pair. */
 
 #include "symtable.h"
 #include <assert.h>
+#include <stdlib.h>
 #include <string.h>
 
 /*--------------------------------------------------------------------*/
 
-/* Each Binding represents a key-value pair in hash table */
+/* Each Binding represents a key-value pair in symbol table */
 struct Binding
 {
     /* Pointer to key string (defensive copy) */
@@ -25,7 +26,7 @@ struct Binding
     struct Binding *next;
 };
 
-/* SymTable structure represents overall hash table */
+/* SymTable structure represents overall symbol table */
 struct SymTable
 {
     /* Head of the linked list of bindings */
@@ -293,7 +294,7 @@ void *SymTable_remove(SymTable_T oSymTable, const char *pcKey)
         /* Otherwise, move on to the next binding */
         curr = curr->next;
     }
-    
+
      /* Handle condition where no binding with pcKey exists */
     return NULL;
 }

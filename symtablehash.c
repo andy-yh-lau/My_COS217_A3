@@ -12,6 +12,7 @@ array if there is sufficient memory */
 
 #include "symtable.h"
 #include <assert.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* List of prime numbers used for hash table sizes. Each number
